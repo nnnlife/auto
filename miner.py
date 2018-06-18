@@ -12,6 +12,9 @@ class Miner:
     def is_waiting(self):
         return self.status.is_waiting()
 
+    def set_wait_status(self, player):
+        self.status = waitstatus.WaitStatus(player)
+
     def next(self, event):
         self.status = self.status.on_event(event)
 
