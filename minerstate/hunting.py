@@ -25,6 +25,7 @@ class _CompareArmy(state.SubState):
             return None
         return _ClickForCheckArmy(self.get_hunter())
 
+
 class _ClickForCheckArmy(state.SubState):
     def __init__(self, hunter):
         state.SubState.__init__(self, hunter)
@@ -48,10 +49,8 @@ class _SetMine(state.SubState):
         state.SubState.__init__(self, hunter)
 
     def do(self, event):
-        index = screen.get_index_mine(event)
-        key_index = ['t', 'y', 'u', 'i', 'o', 'p']
-        if index >= 0:
-            winkey.send_key(winkey.VK_CODE[key_index[index]])
+        if screen.is_mine_found(event):
+            winkey.send_key(winkey.VK_CODE['h'])
         else:
             winkey.send_key(winkey.VK_CODE['d'])
             time.sleep(1)
@@ -88,6 +87,7 @@ class _Attack(state.SubState):
     def __init__(self, hunter):
         state.SubState.__init__(self, hunter)
         self.set_mine = False
+        self.defeat_popup = False
 
     def do(self, event):
         time.sleep(1)
@@ -98,9 +98,11 @@ class _Attack(state.SubState):
         return True
 
     def check(self, event):
-        if screen.is_defeat_popup(event):
-            print("DEFEAT POPUP")
+        if self.defeat_popup and not screen.is_defeat_popup(event):
             return True
+        elif screen.is_defeat_popup(event):
+            print("DEFEAT POPUP")
+            self.defeat_popup = True
         elif self.get_hunter().is_hunting_timeout():
             print("HUNTING TIMEOUT")
             return True
@@ -111,37 +113,63 @@ class _Attack(state.SubState):
 
 
 class _CheckTarget(state.SubState):
+    index = 0
     def __init__(self, hunter):
         state.SubState.__init__(self, hunter)
         self.can_defeat = False
+        self.set_mine = False
+        self.go_attack = False
+        self.pressed = False
 
     def do(self, event):
         type = screen.get_target_type(event)
+        if type == -1:
+            return False
+
         self.can_defeat = self.get_hunter().can_defeat(type)
         if self.can_defeat:
-            winkey.send_key(winkey.VK_CODE['n'])  # TODO: change to attack key
-            time.sleep(2)
+            winkey.send_key(winkey.VK_CODE['y'])  # TODO: change to attack key
+            self.go_attack = True
+            self.pressed = True
         else:
-            winkey.send_key(winkey.VK_CODE['n'])  # TODO: change to next
-            time.sleep(2)
+            winkey.send_key(winkey.VK_CODE['g'])  # TODO: change to next
+            self.pressed = True
+        return True
 
     def check(self, event):
+        if self.pressed:
+            if not screen.is_target_screen(event):
+                self.pressed = False
+            return False
+
         if self.can_defeat:
             if screen.dispatch_army_popup(event):
                 return True
-            else:
-                return False
+
+            return False
         else:
             # no more
-            if screen.is_no_more_target_in_next(event):
+            print("SAVE", _CheckTarget.index)
+            #event.save('test_' + str(_CheckTarget.index) + '.png')
+            _CheckTarget.index += 1
+            if screen.is_no_more_target(event):
+                print("NO MORE TARGET")
+                self.set_mine = True
                 return True
             elif screen.is_target_screen(event):
+                print("GO TO TARGET SCREEM")
                 return True
 
         return False
 
     def next(self):
+        if self.set_mine:
+            return _PointToMine(self.get_hunter())
+        elif self.go_attack:
+            return _Attack(self.get_hunter())
+
         return _CheckTarget(self.get_hunter())
+
 
 class _NextTarget(state.SubState):
     def __init__(self, hunter):
@@ -172,10 +200,8 @@ class _SetTarget(state.SubState):
         state.SubState.__init__(self, hunter)
 
     def do(self, event):
-        index = screen.get_index_target(event)
-        key_index = ['t', 'y', 'u', 'i', 'o', 'p']
-        if index >= 0:
-            winkey.send_key(winkey.VK_CODE[key_index[index]])
+        if screen.is_target_found(event):
+            winkey.send_key(winkey.VK_CODE['j'])
         else:
             winkey.send_key(winkey.VK_CODE['d'])
             time.sleep(1)
@@ -273,7 +299,7 @@ class Hunting(state.State):
         next_status = self.get_status().on_event(event)
         if next_status:
             self.set_status(next_status)
-            # print("State %s%s" % (str(self), str(self.get_status())))
+            print("State %s%s" % (str(self), str(self.get_status())))
             return self
         else:
             return None

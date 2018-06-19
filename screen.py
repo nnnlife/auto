@@ -1,6 +1,8 @@
 import numpy as np
 import cv2
 from skimage.measure import compare_ssim
+import os
+import hunter
 
 
 UNKNOWN = 0
@@ -116,6 +118,29 @@ def is_occupied_mine(img, count = 0):
         print("AVAILABLE")
         return AVAILABLE
 
+    result = OCCUPIED
+    icon_areas = [(306, 627, 313, 630 + 1), (228, 615, 233, 623 + 1)]
+    black_areas = [(224, 607, 237 + 1, 607 + 1), (303, 607, 315 + 1, 607 + 1)]
+    for area in icon_areas:
+        if not _check_area_with_color(img, area,
+                                      (200, 255), (200, 255), (200, 255)):
+            if count is 0:
+                print("ALLY UNKNOWN")
+            result = UNKNOWN
+            break
+
+    for area in black_areas:
+        if not _check_area_with_color(img, area,
+                                      (15, 30), (15, 30), (15, 30)):
+            result = UNKNOWN
+            if count is 0:
+                print("ALLY UNKNOWN")
+            break
+
+    if result is OCCUPIED:
+        print("ALLY OCCUPIED")
+        return OCCUPIED
+
     return UNKNOWN
 
 
@@ -156,10 +181,6 @@ def is_high_number(img):
 
 
 def is_weather(img):
-    # 470, 259, 478 + 1, 266 + 1  r = 150, 250, g = 60, 90, b = 40, 50
-    # 458, 247, 464 + 1, 250 + 1  r = 210, 230, g = 90, 105, b = 50, 65
-    # 484, 250, 488 + 1, 252 + 1  r = 195, 230, g = 90, 105, b = 50, 65
-    # 482, 271, 484 + 1, 273 + 1  r = 135, 150, g = 45, 60, b = 25, 35
     r1 = _check_area_with_color(img, (470, 259, 478+1, 266+1),
                                        (150, 250), (60, 90), (40, 50))
     r2 = _check_area_with_color(img, (458, 247, 464 + 1, 250 + 1),
@@ -207,34 +228,87 @@ def fetch_pos_area_as_gray(img):
     return x_gray, y_gray
 
 
-def get_index_mine(img):
-    return -1
+def is_mine_found(img):
+    gap = (182 - 64)
+
+    current_arr = np.array(img)
+    current_arr = current_arr[648:704, 64:524, :]
+    current_arr = cv2.cvtColor(current_arr, cv2.COLOR_BGR2GRAY)
+    res = cv2.matchTemplate(current_arr, hunter.Hunter.mine,
+                            cv2.TM_CCORR_NORMED)
+    _, max_val, _, max_loc = cv2.minMaxLoc(res)
+    if max_val > 0.98 and max_loc[0] == gap:
+        return True
+
+    return False
 
 
-def get_index_target(img):
-    # return index
-    return -1
+def is_target_found(img):
+    gap = (182 - 64)
+
+    current_arr = np.array(img)
+    current_arr = current_arr[648:704, 64:524, :]
+    current_arr = cv2.cvtColor(current_arr, cv2.COLOR_BGR2GRAY)
+    res = cv2.matchTemplate(current_arr, hunter.Hunter.target,
+                            cv2.TM_CCORR_NORMED)
+    _, max_val, _, max_loc = cv2.minMaxLoc(res)
+    print(max_val, max_loc)
+    if max_val > 0.98 and max_loc[0] == (gap * 3):
+        return True
+
+    return False
 
 
 def is_target_screen(img):
-    return True
+    underbar = _check_area_with_color(img, (185, 636, 374 + 1, 636 + 1),
+                                 (70, 120), (70, 120), (40, 88))
+    blackrect = _check_area_with_color(img, (233, 460, 301 + 1, 472 + 1),
+                                      (15, 30), (15, 30), (15, 30))
+    return underbar and blackrect
 
 
 def is_no_more_target(img):
-    return True
+    current_arr = np.array(img)
+    current_arr = current_arr[408:424, 132:408, :]
+
+    current_arr = cv2.cvtColor(current_arr, cv2.COLOR_BGR2GRAY)
+    (score, _) = compare_ssim(current_arr, hunter.Hunter.no_more, full=True)
+    print("NO MORE TARGET", score)
+    return score > 0.8
 
 
 def get_target_type(img):
-    return 0
+    # infantry = 0, knight = 1, archer = 2, tank = 3, unknown -1
+    new_c = img.crop((254, 302, 283, 331))
+    current_arr = cv2.cvtColor(np.array(new_c), cv2.COLOR_BGR2GRAY)
+    for i in range(len(hunter.Hunter.types)):
+        (score, diff) = compare_ssim(current_arr, hunter.Hunter.types[i], full=True)
+        if score > 0.9:
+            return i
+    return -1
 
 
 def is_defeat_popup(img):
-    return True
+    arrow = _check_area_with_color(img, (138, 824, 158 + 1, 829 + 1),
+                                    (85, 150), (150, 210), (70, 85))
+    arrow_right = _check_area_with_color(img, (498, 817, 501 + 1, 826 + 1),
+                                   (190, 210), (180, 200), (150, 170))
+    name_below = _check_area_with_color(img, (48, 846, 60 + 1, 856 + 1),
+                                         (0, 15), (0, 15), (0, 15))
+    if arrow and arrow_right and name_below:
+        return True
+    return False
 
 
 def capture_primary_army(img):
-    return None
+    # 172 - 243, y: 230 - 241
+    np_arr = np.array(img)
+    arr = np_arr[230:241+1, 172:243+1, :]
+    return arr
 
 
 def army_is_back(origin, now):
-    return True
+    score, _ = compare_ssim(origin, now, full=True)
+    if score > 0.8:
+        return True
+    return False

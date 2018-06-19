@@ -24,7 +24,7 @@ def occasion_exist(img):
 
 
 def is_hunting_available():
-    return True
+    return False
 
 
 if __name__ == '__main__':
@@ -32,15 +32,15 @@ if __name__ == '__main__':
     army = checkarmy.CheckArmy()
     miners = []
     hunt = None
-    players = [player.Player((6, 2)), player.Player((4,5))]
-    hunter = hunter.Hunter()
+    players = [player.Player((6, 2)), player.Player((5,4))]
+
+    hunter = hunter.Hunter([3])  # ['infantry', 'archer', 'knight', 'tank']
 
     while True:
         current_screen = win.capture()
-        # current_screen.save('archer.png')
-        # exit(0)
+        #current_screen.save('no_more2.png')
+        #exit(0)
         waiting_exist = False
-        hunting_exist = False
 
         if occasion_exist(current_screen):
             continue
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                 m.next(current_screen)
                 break
 
-        if waiting_exist or hunting_exist:    # startup
+        if waiting_exist:    # startup
             time.sleep(0.1)
         elif hunt is not None:
             hunt = hunt.on_event(current_screen)
@@ -77,11 +77,12 @@ if __name__ == '__main__':
                             found = True
 
                     if not found:
-                        print("SLEEP")
                         if is_hunting_available():
+                            print("START HUNTING")
                             hunt = hunting.Hunting(hunter.reset())
                             time.sleep(0.1)
                         else:
+                            print("SLEEP")
                             time.sleep(random.randint(10, 20))
             else:
                 time.sleep(0.1)
