@@ -4,8 +4,10 @@ import time
 import player
 import screen
 import winkey
+import hunter
 import random
 from minerstate import checkarmy
+from minerstate import hunting
 
 
 def occasion_exist(img):
@@ -21,11 +23,17 @@ def occasion_exist(img):
     return False
 
 
+def is_hunting_available():
+    return True
+
+
 if __name__ == '__main__':
     win = windep.WinDep()
     army = checkarmy.CheckArmy()
     miners = []
+    hunt = None
     players = [player.Player((6, 2)), player.Player((4,5))]
+    hunter = hunter.Hunter()
 
     while True:
         current_screen = win.capture()
@@ -45,7 +53,8 @@ if __name__ == '__main__':
 
         if waiting_exist or hunting_exist:    # startup
             time.sleep(0.1)
-            continue
+        elif hunt is not None:
+            hunt = hunt.on_event(current_screen)
         else:
             army = army.on_event(current_screen)
             if not army:
@@ -69,6 +78,10 @@ if __name__ == '__main__':
 
                     if not found:
                         print("SLEEP")
-                        time.sleep(random.randint(10, 20))
+                        if is_hunting_available():
+                            hunt = hunting.Hunting(hunter.reset())
+                            time.sleep(0.1)
+                        else:
+                            time.sleep(random.randint(10, 20))
             else:
                 time.sleep(0.1)

@@ -55,6 +55,9 @@ class SubState:
     def get_player(self):
         return self.player
 
+    def get_hunter(self):
+        return self.player
+
     def go_to_do(self):
         self.step = Action.DO
 
