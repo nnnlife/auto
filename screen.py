@@ -207,3 +207,34 @@ def fetch_pos_area_as_gray(img):
     return x_gray, y_gray
 
 
+def get_index_mine(img):
+    return -1
+
+
+def get_index_target(img):
+    # return index
+    return -1
+
+
+def is_target_screen(img):
+    return True
+
+
+def is_no_more_target(img):
+    return True
+
+
+def get_target_type(img):
+    return 0
+
+
+def is_defeat_popup(img):
+    return True
+
+
+def capture_primary_army(img):
+    return None
+
+
+def army_is_back(origin, now):
+    return True
