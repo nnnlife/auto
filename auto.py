@@ -6,6 +6,7 @@ import screen
 import winkey
 import hunter
 import random
+import datetime
 from minerstate import checkarmy
 from minerstate import hunting
 
@@ -23,9 +24,31 @@ def occasion_exist(img):
     return False
 
 
-def is_hunting_available():
+def is_hunting_available(h):
+    now = datetime.datetime.now()
+    # earlier 10 min than normal
+    weather_start = now.replace(hour=22, minute=20, second=0, microsecond=0)
+    weather_end = now.replace(hour=22, minute=40, second=0, microsecond=0)
+
+    # earlier 10 min than normal
+    new_day_start = now.replace(hour=23, minute=50, second=0, microsecond=0)
+    new_day_end = now.replace(hour=0, minute=10, second=0, microsecond=0)
+
+    if weather_start < now < weather_end:
+        print("WAIT WEATHER")
+        time.sleep(5)
+        return False
+    elif new_day_start < now < new_day_end:
+        print("WAIT NEWDAY")
+        time.sleep(5)
+        return False
+
+    if (datetime.datetime.now() - h.get_last_no_ticket_time()).total_seconds() > 60 * 30:
+        return True
     return False
 
+
+# TODO: 황건 모집령 다 썼을 경우 에러 처리
 
 if __name__ == '__main__':
     win = windep.WinDep()
@@ -34,12 +57,11 @@ if __name__ == '__main__':
     hunt = None
     players = [player.Player((6, 2)), player.Player((5,4))]
 
+    BLOCK_HUNTING = False
     hunter = hunter.Hunter([3])  # ['infantry', 'archer', 'knight', 'tank']
 
     while True:
         current_screen = win.capture()
-        #current_screen.save('no_more2.png')
-        #exit(0)
         waiting_exist = False
 
         if occasion_exist(current_screen):
@@ -77,7 +99,7 @@ if __name__ == '__main__':
                             found = True
 
                     if not found:
-                        if is_hunting_available():
+                        if not BLOCK_HUNTING and is_hunting_available(hunter):
                             print("START HUNTING")
                             hunt = hunting.Hunting(hunter.reset())
                             time.sleep(0.1)

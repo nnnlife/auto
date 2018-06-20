@@ -12,16 +12,24 @@ class Hunter:
              np.load('data' + os.sep + tt[1] + '.npy'),
              np.load('data' + os.sep + tt[2] + '.npy'),
              np.load('data' + os.sep + tt[3] + '.npy')]
+    no_ticket = np.load('data' + os.sep + 'no_ticket.npy')
 
     def __init__(self, win_types):
         self.hunting_start_time = None
         self.capture = None
         self.win_types = win_types
+        self.last_no_ticket_time = datetime.datetime.now() - datetime.timedelta(days=1)
 
     def reset(self):
         self.hunting_start_time = None
         self.capture = None
         return self
+
+    def set_last_no_ticket_time(self):
+        self.last_no_ticket_time = datetime.datetime.now()
+
+    def get_last_no_ticket_time(self):
+        return self.last_no_ticket_time
 
     def can_defeat(self, type):
         for i in self.win_types:
@@ -33,7 +41,7 @@ class Hunter:
         self.hunting_start_time = datetime.datetime.now()
 
     def is_hunting_timeout(self):
-        if (datetime.datetime.now() - self.hunting_start_time).total_seconds() > 60 * 10:
+        if (datetime.datetime.now() - self.hunting_start_time).total_seconds() > 60 * 15:
             self.hunting_start_time = None
             return True
 

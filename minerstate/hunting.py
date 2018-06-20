@@ -5,6 +5,26 @@ import datetime
 import time
 
 
+class _ClickMineNext(state.SubState):
+    def __init__(self, hunter):
+        state.SubState.__init__(self, hunter)
+        self.done = False
+
+    def do(self, event):
+        if screen.is_search_popup(event):
+            winkey.send_key(winkey.VK_CODE['n'])
+        time.sleep(1)
+        return True
+
+    def check(self, event):
+        if not screen.is_search_popup(event):
+            return True
+        return False
+
+    def next(self):
+        return None
+
+
 class _CompareArmy(state.SubState):
     def __init__(self, hunter):
         state.SubState.__init__(self, hunter)
@@ -14,7 +34,7 @@ class _CompareArmy(state.SubState):
         return True
 
     def check(self, event):
-        if screen.army_is_back(self.get_hunter().get_capture, event):
+        if screen.army_is_back(self.get_hunter().get_capture(), event):
             self.done = True
         winkey.send_key(winkey.VK_CODE['esc'])
         time.sleep(1)
@@ -22,7 +42,7 @@ class _CompareArmy(state.SubState):
 
     def next(self):
         if self.done:
-            return None
+            return _ClickMineNext(self.get_hunter())
         return _ClickForCheckArmy(self.get_hunter())
 
 
@@ -32,6 +52,8 @@ class _ClickForCheckArmy(state.SubState):
 
     def do(self, event):
         winkey.send_key(winkey.VK_CODE['m'])
+        time.sleep(1)
+
         return True
 
     def check(self, event):
@@ -51,6 +73,7 @@ class _SetMine(state.SubState):
     def do(self, event):
         if screen.is_mine_found(event):
             winkey.send_key(winkey.VK_CODE['h'])
+            time.sleep(1)
         else:
             winkey.send_key(winkey.VK_CODE['d'])
             time.sleep(1)
@@ -98,8 +121,11 @@ class _Attack(state.SubState):
         return True
 
     def check(self, event):
-        if self.defeat_popup and not screen.is_defeat_popup(event):
-            return True
+        if self.defeat_popup:
+            if not screen.is_defeat_popup(event):
+                time.sleep(6)
+                return True
+            return False
         elif screen.is_defeat_popup(event):
             print("DEFEAT POPUP")
             self.defeat_popup = True
@@ -113,13 +139,13 @@ class _Attack(state.SubState):
 
 
 class _CheckTarget(state.SubState):
-    index = 0
     def __init__(self, hunter):
         state.SubState.__init__(self, hunter)
         self.can_defeat = False
         self.set_mine = False
         self.go_attack = False
         self.pressed = False
+        self.try_count = 0
 
     def do(self, event):
         type = screen.get_target_type(event)
@@ -128,17 +154,24 @@ class _CheckTarget(state.SubState):
 
         self.can_defeat = self.get_hunter().can_defeat(type)
         if self.can_defeat:
-            winkey.send_key(winkey.VK_CODE['y'])  # TODO: change to attack key
+            winkey.send_key(winkey.VK_CODE['y'])  # ATTACK
             self.go_attack = True
             self.pressed = True
         else:
-            winkey.send_key(winkey.VK_CODE['g'])  # TODO: change to next
+            winkey.send_key(winkey.VK_CODE['g'])  # NEXT
             self.pressed = True
         return True
 
     def check(self, event):
         if self.pressed:
-            if not screen.is_target_screen(event):
+            if screen.is_no_ticket(event):
+                self.set_mine = True
+                time.sleep(1)
+                winkey.send_key(winkey.VK_CODE['esc'])
+                time.sleep(1)
+                self.get_hunter().set_last_no_ticket_time()
+                return True
+            elif not screen.is_target_screen(event):
                 self.pressed = False
             return False
 
@@ -149,16 +182,19 @@ class _CheckTarget(state.SubState):
             return False
         else:
             # no more
-            print("SAVE", _CheckTarget.index)
-            #event.save('test_' + str(_CheckTarget.index) + '.png')
-            _CheckTarget.index += 1
             if screen.is_no_more_target(event):
                 print("NO MORE TARGET")
                 self.set_mine = True
+                time.sleep(1)
                 return True
             elif screen.is_target_screen(event):
                 print("GO TO TARGET SCREEM")
                 return True
+            elif self.try_count > 30:
+                print("TRY TIMEOUT")
+                return True
+
+            self.try_count += 1
 
         return False
 
@@ -202,6 +238,7 @@ class _SetTarget(state.SubState):
     def do(self, event):
         if screen.is_target_found(event):
             winkey.send_key(winkey.VK_CODE['j'])
+            time.sleep(1)
         else:
             winkey.send_key(winkey.VK_CODE['d'])
             time.sleep(1)
@@ -246,6 +283,7 @@ class _ClickArea(state.SubState):
 
     def check(self, event):
         if screen.is_area_popup(event):
+            time.sleep(1)
             return True
         return False
 
@@ -291,6 +329,7 @@ class Hunting(state.State):
     def __init__(self, hunter):
         state.State.__init__(self, hunter)
         self.set_status(_Search(hunter))
+        self.last_state = ""
 
     def is_waiting(self):
         return False
@@ -299,7 +338,10 @@ class Hunting(state.State):
         next_status = self.get_status().on_event(event)
         if next_status:
             self.set_status(next_status)
-            print("State %s%s" % (str(self), str(self.get_status())))
+            state = "State %s%s" % (str(self), str(self.get_status()))
+            if self.last_state != state:
+                print(state)
+            self.last_state = state
             return self
         else:
             return None

@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 from skimage.measure import compare_ssim
-import os
+from PIL import Image
 import hunter
 
 
@@ -28,7 +28,7 @@ def _check_area_with_color(img, area, red_r, green_r, blue_r, debug = False):
         if i % 3 is 0:  # red
             if red_r[1] < c or c < red_r[0]:
                 if debug:
-                    print("Red Fail %d %d %d" % (c, red_r[0], red_r[1]))
+                    print("Red Fail %d %d %d" % (c, red_r[0], red_r[1]), area)
                 return False
         elif (i + 2) % 3 is 0:  # green
             if green_r[1] < c or c < green_r[0]:
@@ -81,7 +81,7 @@ def is_occupied_mine(img, count = 0):
         if not _check_area_with_color(img, area,
                                       (200, 255), (200, 255), (200, 255)):
             if count is 0:
-                print("UNKNOWN")
+                print("UNKNOWN1")
             result = UNKNOWN
             break
 
@@ -89,9 +89,9 @@ def is_occupied_mine(img, count = 0):
         print("OCCUPIED")
         return OCCUPIED
 
-    icon_areas = [(335, 620, 346, 623 + 1), (360, 617, 362, 619 + 1),  # 3rd
+    icon_areas = [(335, 620, 346, 623 + 1), # error (360, 617, 362, 619 + 1),  # 3rd
                   (268, 634, 273, 638 + 1),                            # 2nd
-                  (190, 601, 194, 614 + 1)]                            # 1nd
+                  (191, 602, 194, 614 + 1)]                            # 1nd
 
     black_areas = [(184, 594, 198 + 1, 594 + 1),
                    (263, 614, 276 + 1, 614 + 1),
@@ -102,16 +102,16 @@ def is_occupied_mine(img, count = 0):
         if not _check_area_with_color(img, area,
                                       (200, 255), (200, 255), (200, 255)):
             if count is 0:
-                print("UNKNOWN")
+                print("UNKNOWN2")
             result = UNKNOWN
             break
 
     for area in black_areas:
         if not _check_area_with_color(img, area,
-                                      (15, 30), (15, 30), (15, 30)):
+                                      (15, 35), (15, 35), (15, 35)):    # BUG: Whiter Color: 27, 29, 32
             result = UNKNOWN
             if count is 0:
-                print("UNKNOWN")
+                print("UNKNOWN3")
             break
 
     if result is AVAILABLE:
@@ -131,7 +131,7 @@ def is_occupied_mine(img, count = 0):
 
     for area in black_areas:
         if not _check_area_with_color(img, area,
-                                      (15, 30), (15, 30), (15, 30)):
+                                      (15, 35), (15, 35), (15, 35)):
             result = UNKNOWN
             if count is 0:
                 print("ALLY UNKNOWN")
@@ -174,7 +174,7 @@ def is_high_number(img):
                 count += 1
 
     print("NUMBER COUNT:%d" % count)
-    if count >= 20:
+    if count >= 17:
         return True
 
     return False
@@ -273,7 +273,7 @@ def is_no_more_target(img):
 
     current_arr = cv2.cvtColor(current_arr, cv2.COLOR_BGR2GRAY)
     (score, _) = compare_ssim(current_arr, hunter.Hunter.no_more, full=True)
-    print("NO MORE TARGET", score)
+    # gprint("NO MORE TARGET", score)
     return score > 0.8
 
 
@@ -304,11 +304,30 @@ def capture_primary_army(img):
     # 172 - 243, y: 230 - 241
     np_arr = np.array(img)
     arr = np_arr[230:241+1, 172:243+1, :]
+    arr = cv2.cvtColor(arr, cv2.COLOR_BGR2GRAY)
     return arr
 
 
 def army_is_back(origin, now):
-    score, _ = compare_ssim(origin, now, full=True)
+    np_arr = np.array(now)
+    arr = np_arr[230:241 + 1, 172:243 + 1, :]
+    arr = cv2.cvtColor(arr, cv2.COLOR_BGR2GRAY)
+    score, _ = compare_ssim(arr, origin, full=True)
+    print("ARMY IS BACK", score)
     if score > 0.8:
         return True
+    else:
+        Image.fromarray(arr).save('now.png')
+        Image.fromarray(origin).save('origin.png')
+    return False
+
+
+def is_no_ticket(img):
+    s = img.crop((137, 409, 367, 424))
+    arr = cv2.cvtColor(np.array(s), cv2.COLOR_BGR2GRAY)
+    score, _ = compare_ssim(arr, hunter.Hunter.no_ticket, full=True)
+    if score > 0.8:
+        print("NO TICKET***********")
+        return True
+
     return False
