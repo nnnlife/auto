@@ -3,6 +3,8 @@ import winkey
 import screen
 import time
 import datetime
+import eventtime
+
 
 class _ClickArea(state.SubState):
     def __init__(self, player):
@@ -27,19 +29,7 @@ class _Search(state.SubState):
         state.SubState.__init__(self, player)
 
     def do(self, event):
-        now = datetime.datetime.now()
-        weather_start = now.replace(hour=22, minute=30, second=0, microsecond=0)
-        weather_end = now.replace(hour=22, minute=40, second=0, microsecond=0)
-
-        new_day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        new_day_end = now.replace(hour=0, minute=10, second=0, microsecond=0)
-
-        if weather_start < now < weather_end:
-            print("CHECKARMY WAIT WEATHER")
-            time.sleep(5)
-            return False
-        elif new_day_start < now < new_day_end:
-            print("CHECKARMY WAIT NEWDAY")
+        if eventtime.is_event_time():
             time.sleep(5)
             return False
         else:
@@ -60,12 +50,16 @@ class CheckArmy(state.State):
     def __init__(self):
         state.State.__init__(self, None)
         self.set_status(_Search(None))
+        self.last_state = ""
 
     def on_event(self, event):
         next_status = self.get_status().on_event(event)
         if next_status:
             self.set_status(next_status)
-            #print("State %s%s" % (str(self), str(self.get_status())))
+            state = "State %s%s" % (str(self), str(self.get_status()))
+            if self.last_state != state:
+                print(state)
+            self.last_state = state
             return self
 
         return None

@@ -2,6 +2,7 @@ import time
 import win32ui, win32gui, win32con, win32api
 import winkey
 from PIL import Image
+import datetime
 
 hwnd = None
 
@@ -20,6 +21,7 @@ class WinDep:
         l, t, r, b = win32gui.GetWindowRect(hwnd)
         self.window_width = r - l
         self.window_height = b - t
+        self.capture_time = datetime.datetime.now()
         print("Window Size: %dx%d" % (self.window_width, self.window_height))
         win32gui.SetForegroundWindow(hwnd)
         win32gui.ShowWindow(hwnd, 1)
@@ -43,6 +45,8 @@ class WinDep:
         memDC.DeleteDC()
         win32gui.ReleaseDC(hwnd, w_handle_DC)
         win32gui.DeleteObject(dataBitMap.GetHandle())
+        # print("Took ", (datetime.datetime.now() - self.capture_time).total_seconds(), " s")
+        self.capture_time = datetime.datetime.now()
         return im
 
 

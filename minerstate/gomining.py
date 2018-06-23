@@ -7,3 +7,6 @@ class GoMiningStatus(state.State):
 
     def on_event(self, event):
         return self
+
+    def is_waiting(self):
+        return False

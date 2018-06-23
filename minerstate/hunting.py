@@ -3,6 +3,7 @@ import winkey
 import screen
 import datetime
 import time
+import eventtime
 
 
 class _ClickMineNext(state.SubState):
@@ -17,7 +18,11 @@ class _ClickMineNext(state.SubState):
         return True
 
     def check(self, event):
-        if not screen.is_search_popup(event):
+        if screen.is_defeat_popup(event):
+            time.sleep(6)
+            return False
+        elif not screen.is_search_popup(event):
+            time.sleep(3)
             return True
         return False
 
@@ -34,7 +39,10 @@ class _CompareArmy(state.SubState):
         return True
 
     def check(self, event):
-        if screen.army_is_back(self.get_hunter().get_capture(), event):
+        if screen.is_defeat_popup(event):
+            time.sleep(6)
+            return False
+        elif screen.army_is_back(self.get_hunter().get_capture(), event):
             self.done = True
         winkey.send_key(winkey.VK_CODE['esc'])
         time.sleep(1)
@@ -57,7 +65,10 @@ class _ClickForCheckArmy(state.SubState):
         return True
 
     def check(self, event):
-        if screen.is_area_popup(event):
+        if screen.is_defeat_popup(event):
+            time.sleep(6)
+            return False
+        elif screen.is_area_popup(event):
             time.sleep(1)
             return True
         return False
@@ -71,7 +82,10 @@ class _SetMine(state.SubState):
         state.SubState.__init__(self, hunter)
 
     def do(self, event):
-        if screen.is_mine_found(event):
+        if screen.is_defeat_popup(event):
+            time.sleep(6)
+            return False
+        elif screen.is_mine_found(event):
             winkey.send_key(winkey.VK_CODE['h'])
             time.sleep(1)
         else:
@@ -98,7 +112,10 @@ class _PointToMine(state.SubState):
         return True
 
     def check(self, event):
-        if screen.is_search_popup(event):
+        if screen.is_defeat_popup(event):
+            time.sleep(6)
+            return False
+        elif screen.is_search_popup(event):
             return True
         return False
 
@@ -132,6 +149,7 @@ class _Attack(state.SubState):
         elif self.get_hunter().is_hunting_timeout():
             print("HUNTING TIMEOUT")
             return True
+        time.sleep(0.01)
         return False
 
     def next(self):
@@ -185,15 +203,19 @@ class _CheckTarget(state.SubState):
             if screen.is_no_more_target(event):
                 print("NO MORE TARGET")
                 self.set_mine = True
+                self.get_hunter().set_last_no_ticket_time()
                 time.sleep(1)
                 return True
             elif screen.is_target_screen(event):
                 print("GO TO TARGET SCREEM")
                 return True
             elif self.try_count > 30:
+                self.set_mine = True  # Press next but it is already empty
                 print("TRY TIMEOUT")
                 return True
 
+            print("TIMEOUT")
+            time.sleep(0.5)
             self.try_count += 1
 
         return False
@@ -296,19 +318,7 @@ class _Search(state.SubState):
         state.SubState.__init__(self, hunter)
 
     def do(self, event):
-        now = datetime.datetime.now()
-        weather_start = now.replace(hour=22, minute=30, second=0, microsecond=0)
-        weather_end = now.replace(hour=22, minute=40, second=0, microsecond=0)
-
-        new_day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        new_day_end = now.replace(hour=0, minute=10, second=0, microsecond=0)
-
-        if weather_start < now < weather_end:
-            print("WAIT WEATHER")
-            time.sleep(5)
-            return False
-        elif new_day_start < now < new_day_end:
-            print("WAIT NEWDAY")
+        if eventtime.is_event_time():
             time.sleep(5)
             return False
         else:

@@ -28,13 +28,17 @@ def _check_area_with_color(img, area, red_r, green_r, blue_r, debug = False):
         if i % 3 is 0:  # red
             if red_r[1] < c or c < red_r[0]:
                 if debug:
-                    print("Red Fail %d %d %d" % (c, red_r[0], red_r[1]), area)
+                    print("Red Fail %d %d~%d" % (c, red_r[0], red_r[1]), area)
                 return False
         elif (i + 2) % 3 is 0:  # green
             if green_r[1] < c or c < green_r[0]:
+                if debug:
+                    print("Green Fail %d %d~%d" % (c, green_r[0], green_r[1]), area)
                 return False
         elif (i + 3) % 3 is 0:  # blue
             if blue_r[1] < c or c < blue_r[0]:
+                if debug:
+                    print("Blue Fail %d %d~%d" % (c, blue_r[0], blue_r[1]), area)
                 return False
 
     if debug:
@@ -42,9 +46,9 @@ def _check_area_with_color(img, area, red_r, green_r, blue_r, debug = False):
     return True
 
 
-def is_search_popup(img):
+def is_search_popup(img, debug = False):
     return _check_area_with_color(img, (4, 578, 151, 579),
-                                  (23,23), (26,26), (31, 31))
+                                  (23 ,23), (26,26), (31, 31), debug)
 
 
 def is_area_popup(img):
@@ -62,8 +66,8 @@ def is_checked_mine(img, player):
     for o in occupied_mines:
         (xscore, xdiff) = compare_ssim(xpos, o[1], full=True)
         (yscore, ydiff) = compare_ssim(ypos, o[2], full=True)
-        print("XSCORE", xscore)
-        print("YSCORE", yscore)
+        # print("XSCORE", xscore)
+        # print("YSCORE", yscore)
         if xscore > 0.8 and yscore > 0.8:
             return True
 
@@ -80,13 +84,13 @@ def is_occupied_mine(img, count = 0):
     for area in icon_areas:
         if not _check_area_with_color(img, area,
                                       (200, 255), (200, 255), (200, 255)):
-            if count is 0:
-                print("UNKNOWN1")
+            # if count is 0:
+            #    print("UNKNOWN1")
             result = UNKNOWN
             break
 
     if result is OCCUPIED:
-        print("OCCUPIED")
+        # print("OCCUPIED")
         return OCCUPIED
 
     icon_areas = [(335, 620, 346, 623 + 1), # error (360, 617, 362, 619 + 1),  # 3rd
@@ -101,8 +105,8 @@ def is_occupied_mine(img, count = 0):
     for area in icon_areas:
         if not _check_area_with_color(img, area,
                                       (200, 255), (200, 255), (200, 255)):
-            if count is 0:
-                print("UNKNOWN2")
+            # if count is 0:
+            #     print("UNKNOWN2")
             result = UNKNOWN
             break
 
@@ -110,12 +114,12 @@ def is_occupied_mine(img, count = 0):
         if not _check_area_with_color(img, area,
                                       (15, 35), (15, 35), (15, 35)):    # BUG: Whiter Color: 27, 29, 32
             result = UNKNOWN
-            if count is 0:
-                print("UNKNOWN3")
+            # if count is 0:
+            #     print("UNKNOWN3")
             break
 
     if result is AVAILABLE:
-        print("AVAILABLE")
+        # print("AVAILABLE")
         return AVAILABLE
 
     result = OCCUPIED
@@ -124,8 +128,8 @@ def is_occupied_mine(img, count = 0):
     for area in icon_areas:
         if not _check_area_with_color(img, area,
                                       (200, 255), (200, 255), (200, 255)):
-            if count is 0:
-                print("ALLY UNKNOWN")
+            # if count is 0:
+            #     print("ALLY UNKNOWN")
             result = UNKNOWN
             break
 
@@ -133,12 +137,12 @@ def is_occupied_mine(img, count = 0):
         if not _check_area_with_color(img, area,
                                       (15, 35), (15, 35), (15, 35)):
             result = UNKNOWN
-            if count is 0:
-                print("ALLY UNKNOWN")
+            # if count is 0:
+            #     print("ALLY UNKNOWN")
             break
 
     if result is OCCUPIED:
-        print("ALLY OCCUPIED")
+        # print("ALLY OCCUPIED")
         return OCCUPIED
 
     return UNKNOWN
@@ -178,6 +182,18 @@ def is_high_number(img):
         return True
 
     return False
+
+
+def is_castle_summary(img):
+    dark_box = _check_area_with_color(img, (445, 174, 455 + 1, 180 + 1),
+                                (40, 55), (55, 70), (55, 75))
+    x_symbol_lt = _check_area_with_color(img, (465, 183, 468 + 1, 184 + 1),
+                                (250, 255), (240, 255), (200, 210))
+    x_symbol_rb = _check_area_with_color(img, (478, 199, 481 + 1, 199 + 1),
+                                         (150, 155), (138, 142), (105, 107))
+    left_top = _check_area_with_color(img, (46, 177, 50 + 1, 179 + 1),
+                                         (29, 33), (37, 40), (42, 45))
+    return dark_box and x_symbol_lt and x_symbol_rb and left_top
 
 
 def is_weather(img):
@@ -295,8 +311,20 @@ def is_defeat_popup(img):
                                    (190, 210), (180, 200), (150, 170))
     name_below = _check_area_with_color(img, (48, 846, 60 + 1, 856 + 1),
                                          (0, 15), (0, 15), (0, 15))
-    if arrow and arrow_right and name_below:
+    if arrow and name_below:  # and arrow_right:
+        print("DEFEAT POPUP**********")
         return True
+    else:
+        """
+        fails = []
+        if not arrow:
+            fails.append("ARROW")
+        if not arrow_right:
+            fails.append("ARROW_RIGHT")
+        if not name_below:
+            fails.append("NAME_BELOW")
+        print("DEFEAT FAILS ", fails)
+        """
     return False
 
 
@@ -316,9 +344,11 @@ def army_is_back(origin, now):
     print("ARMY IS BACK", score)
     if score > 0.8:
         return True
+    """
     else:
         Image.fromarray(arr).save('now.png')
         Image.fromarray(origin).save('origin.png')
+    """
     return False
 
 

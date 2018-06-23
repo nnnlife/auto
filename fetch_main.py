@@ -6,6 +6,7 @@ import time
 import cv2
 import os
 import screen
+import datetime
 
 def png_to_np():
     im = Image.open('images' + os.sep + 'no_more.png')
@@ -114,9 +115,53 @@ def error_testing():
     print(screen.is_high_number(im))
 
 
+def weather_check():
+    im = Image.open('images' + os.sep + 'weather_2.png')
+    print(screen.is_weather(im))
+
+
+def is_castle_summary():
+    im = Image.open('images' + os.sep + 'castle_result.png')
+    print(screen.is_castle_summary(im))
+
+
+def time_test():
+    now = datetime.datetime.now()
+    delta = datetime.timedelta(minutes=10)
+    print(now - delta, now + delta)
+    castle_time = now.replace(hour=22, minute=00, second=0, microsecond=0)
+    print(abs((now - castle_time).total_seconds()))
+
+
+def search_fail_test():
+    im = Image.open('images' + os.sep + 'search_fail.png')
+    print(screen.is_search_popup(im, True))
+
+
+def capture_stress():
+    win = windep.WinDep()
+
+    while True:
+        win.capture()
+
+
+def castle_test():
+    im = Image.open('castle_fail_1.png')
+    print(screen.is_castle_summary(im))
+
+
+def time_test():
+    now = datetime.datetime.now()
+    print(now.hour, now.minute, now.second)
+
+
 if __name__ == '__main__':
-    save_area()
-    #capture(5, 'no_ticket', 0.1)
+    #capture_stress()
+    #search_fail_test()
+    #time_test()
+    #weather_check()
+    #save_area()
+    #capture(1, 'castle_fail', 0)
     #error_testing()
     #png_to_np()
     #type_loop()
@@ -124,3 +169,5 @@ if __name__ == '__main__':
     #compare_test()
     #save_slices()
     #template_match_test()
+    #castle_test()
+    time_test()

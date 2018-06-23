@@ -9,15 +9,24 @@ import random
 import datetime
 from minerstate import checkarmy
 from minerstate import hunting
+import eventtime
 
 
 def occasion_exist(img):
-    if screen.is_weather(current_screen):
-        winkey.send_key(winkey.VK_CODE['w'])
+    now = datetime.datetime.now()
+    castle_time = now.replace(hour=22, minute=00, second=0, microsecond=0)
+    is_in_castle_time = abs((now - castle_time).total_seconds()) < 10 * 60
+
+    if screen.is_weather(img):  # 22:30, 24:00 short
+        winkey.send_key(winkey.VK_CODE['l'])
         time.sleep(3)
         return True
-    elif screen.is_reward(current_screen):
+    elif screen.is_reward(img):  # RANDOM
         winkey.send_key(winkey.VK_CODE['f'])
+        time.sleep(3)
+        return True
+    elif is_in_castle_time and screen.is_castle_summary(img):     # 22:00
+        winkey.send_key(winkey.VK_CODE['k'])
         time.sleep(3)
         return True
 
@@ -25,40 +34,24 @@ def occasion_exist(img):
 
 
 def is_hunting_available(h):
-    now = datetime.datetime.now()
-    # earlier 10 min than normal
-    weather_start = now.replace(hour=22, minute=20, second=0, microsecond=0)
-    weather_end = now.replace(hour=22, minute=40, second=0, microsecond=0)
-
-    # earlier 10 min than normal
-    new_day_start = now.replace(hour=23, minute=50, second=0, microsecond=0)
-    new_day_end = now.replace(hour=0, minute=10, second=0, microsecond=0)
-
-    if weather_start < now < weather_end:
-        print("WAIT WEATHER")
-        time.sleep(5)
-        return False
-    elif new_day_start < now < new_day_end:
-        print("WAIT NEWDAY")
-        time.sleep(5)
+    if eventtime.is_event_time():
         return False
 
     if (datetime.datetime.now() - h.get_last_no_ticket_time()).total_seconds() > 60 * 30:
         return True
+    print("HUNTING ELAPSED(1800) ", (datetime.datetime.now() - h.get_last_no_ticket_time()).total_seconds())
     return False
 
-
-# TODO: 황건 모집령 다 썼을 경우 에러 처리
 
 if __name__ == '__main__':
     win = windep.WinDep()
     army = checkarmy.CheckArmy()
     miners = []
     hunt = None
-    players = [player.Player((6, 2)), player.Player((5,4))]
+    players = [player.Player((5, 2)), player.Player((1,3))]
 
     BLOCK_HUNTING = False
-    hunter = hunter.Hunter([3])  # ['infantry', 'archer', 'knight', 'tank']
+    hunter = hunter.Hunter([0, 3])  # ['infantry', 'archer', 'knight', 'tank']
 
     while True:
         current_screen = win.capture()
