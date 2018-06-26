@@ -37,9 +37,9 @@ def is_hunting_available(h):
     if eventtime.is_event_time():
         return False
 
-    if (datetime.datetime.now() - h.get_last_no_ticket_time()).total_seconds() > 60 * 30:
+    if datetime.datetime.now().hour is not h.get_last_no_ticket_time().hour:
         return True
-    print("HUNTING ELAPSED(1800) ", (datetime.datetime.now() - h.get_last_no_ticket_time()).total_seconds())
+
     return False
 
 
@@ -98,6 +98,20 @@ if __name__ == '__main__':
                             time.sleep(0.1)
                         else:
                             print("SLEEP")
+                            if not eventtime.is_event_time():
+                                time.sleep(5)
+                                winkey.send_key(winkey.VK_CODE['o'])
+                                time.sleep(5)
+                                current_screen = win.capture()
+                                if screen.is_time_reward(current_screen):
+                                    winkey.send_key(winkey.VK_CODE['r'])
+                                    time.sleep(6)
+                                    winkey.send_key(winkey.VK_CODE['r'])
+                                    time.sleep(5)
+                                    winkey.send_key(winkey.VK_CODE['o'])
+                                else:
+                                    winkey.send_key(winkey.VK_CODE['o'])
+
                             time.sleep(random.randint(10, 20))
             else:
                 time.sleep(0.1)

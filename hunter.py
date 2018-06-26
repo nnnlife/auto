@@ -18,7 +18,7 @@ class Hunter:
         self.hunting_start_time = None
         self.capture = None
         self.win_types = win_types
-        self.last_no_ticket_time = datetime.datetime.now() - datetime.timedelta(days=1)
+        self.last_no_ticket_time = datetime.datetime.now() - datetime.timedelta(hours=1)
 
     def reset(self):
         self.hunting_start_time = None
@@ -41,7 +41,7 @@ class Hunter:
         self.hunting_start_time = datetime.datetime.now()
 
     def is_hunting_timeout(self):
-        if (datetime.datetime.now() - self.hunting_start_time).total_seconds() > 60 * 15:
+        if (datetime.datetime.now() - self.hunting_start_time).total_seconds() > 60 * 10:
             self.hunting_start_time = None
             return True
 

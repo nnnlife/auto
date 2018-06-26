@@ -35,7 +35,7 @@ def _check_area_with_color(img, area, red_r, green_r, blue_r, debug = False):
                 if debug:
                     print("Green Fail %d %d~%d" % (c, green_r[0], green_r[1]), area)
                 return False
-        elif (i + 3) % 3 is 0:  # blue
+        elif (i + 3) % 3 is 0:  # blue this is bug, it should be i+1
             if blue_r[1] < c or c < blue_r[0]:
                 if debug:
                     print("Blue Fail %d %d~%d" % (c, blue_r[0], blue_r[1]), area)
@@ -361,3 +361,9 @@ def is_no_ticket(img):
         return True
 
     return False
+
+
+def is_time_reward(img):
+    gold = _check_area_with_color(img, (319, 317, 322 + 1, 319 + 1),
+                                 (161, 255), (113, 180), (40, 55))
+    return gold

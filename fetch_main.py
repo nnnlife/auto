@@ -146,7 +146,7 @@ def capture_stress():
 
 
 def castle_test():
-    im = Image.open('castle_fail_1.png')
+    im = Image.open('castle_fail2_1.png')
     print(screen.is_castle_summary(im))
 
 
@@ -155,13 +155,49 @@ def time_test():
     print(now.hour, now.minute, now.second)
 
 
+def is_time_reward():
+    im = Image.open('time_reward_1.png')
+    print(screen.is_time_reward(im))
+    im = Image.open('none_reward_1.png')
+    print(screen.is_time_reward(im))
+
+
+def fetch_colors():
+    win = windep.WinDep()
+    red_min = 255
+    red_max = 0
+    blue_min = 255
+    blue_max = 0
+    green_min = 255
+    green_max = 0
+    while True:
+        current_screen = win.capture()
+        np_arr = np.array(current_screen)
+        arr = np_arr[317:319 + 1, 319:322 + 1, :]
+
+        for i, c in enumerate(np.nditer(arr)):
+            if i % 3 is 0:  # red
+                if c > red_max:
+                    red_max = c
+                if c < red_min:
+                    red_min = c
+            elif (i + 2) % 3 is 0:  # green
+                if c > green_max:
+                    green_max = c
+                if c < green_min:
+                    green_min = c
+
+        print("R", red_min, red_max, "G", green_min, green_max, "B", blue_min, blue_max)
+
 if __name__ == '__main__':
+    #is_time_reward()
     #capture_stress()
     #search_fail_test()
     #time_test()
     #weather_check()
     #save_area()
-    #capture(1, 'castle_fail', 0)
+    fetch_colors()
+    #capture(1, 'time_r', 0)
     #error_testing()
     #png_to_np()
     #type_loop()
@@ -170,4 +206,4 @@ if __name__ == '__main__':
     #save_slices()
     #template_match_test()
     #castle_test()
-    time_test()
+    #time_test()
